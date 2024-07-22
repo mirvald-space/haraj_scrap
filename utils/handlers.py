@@ -21,6 +21,7 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
     try:
         logger.debug(f"Searching posts: query={query}, city={
                      city}, page={page}, limit={limit}")
+
         collection_name = f"posts_{query.replace(' ', '_').lower()}"
         if city:
             city_key = get_city_key(city)
