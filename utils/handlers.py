@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 async def search_posts_handler(query: str, city: Optional[str], page: int, limit: int, background_tasks: BackgroundTasks):
     try:
-        logger.debug(f"Searching posts: query={query}, city={
-                     city}, page={page}, limit={limit}")
+        # logger.debug(f"Searching posts: query={query}, city={
+        #              city}, page={page}, limit={limit}")
 
         collection_name = f"posts_{query.replace(' ', '_').lower()}"
         if city:
