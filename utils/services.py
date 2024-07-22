@@ -102,7 +102,6 @@ async def parse_and_store_posts(search_query: str, city: Optional[str] = None):
 
         for item in items:
             post_data = {
-                # Добавляем префикс к URL
                 'URL': f"https://haraj.com.sa/en/{item['URL']}",
                 'bodyHTML': item['bodyHTML'],
                 'id': str(item['id']),
