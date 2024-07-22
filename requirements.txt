@@ -4,3 +4,5 @@ asyncio
 aiohttp
 fastapi
 pymongo
+pydantic
+motor
