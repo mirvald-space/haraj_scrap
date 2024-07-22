@@ -1,0 +1,5 @@
+apscheduler
+python-dotenv
+asyncio
+aiohttp
+fastapi
