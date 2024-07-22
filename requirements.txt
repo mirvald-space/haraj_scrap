@@ -6,3 +6,4 @@ fastapi
 pymongo
 pydantic
 motor
+pydantic-settings
