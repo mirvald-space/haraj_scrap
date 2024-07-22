@@ -7,6 +7,7 @@ from pydantic import BaseModel
 # Base model for a post
 class Post(BaseModel):
     id: Union[str, int]  # ID can be either string or integer
+    bodyHTML: str  # HTML content of the post
     title: str  # Title of the post
     URL: str  # URL of the post
     city: str  # City related to the post
