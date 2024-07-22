@@ -1,16 +1,22 @@
+import os
 from typing import ClassVar, Dict
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
+# Load environment variables from the .env file
+load_dotenv()
 
 # Settings class containing configuration for the application
+
+
 class Settings(BaseSettings):
     # MongoDB URI for connecting to the MongoDB database
-    MONGODB_URI: str = "mongodb+srv://mdalmamunit427:4EsikB9hND59Pvga@jobportal.a2ilieo.mongodb.net/?retryWrites=true&w=majority"
+    MONGODB_URI: str = os.getenv("MONGODB_URI")
     # Name of the database to be used
-    DB_NAME: str = "haraj"
+    DB_NAME: str = os.getenv("DB_NAME")
     # URL for the GraphQL API endpoint with specific query parameters
-    API_URL: str = "https://graphql.haraj.com.sa/?queryName=search&lang=en&clientId=5PfyC2s3-xlv8-ManX-RCdf-LqhFYr5SkUh3v3&version=N9.0.38%20,%206/28/2024/"
+    API_URL: str = os.getenv("API_URL")
 
     # GraphQL query for searching posts with optional pagination and city filters
     SEARCH_QUERY: str = '''
