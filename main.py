@@ -5,6 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 
+from config import settings  # Import settings from config
 from db.database import close_db, init_db
 from utils.routes import router
 from utils.services import update_all_collections
@@ -83,7 +84,8 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting the script...")
-        uvicorn.run(app, host="0.0.0.0", port=8000)  # Run the application
+        # Run the application using the configured port
+        uvicorn.run(app, host="0.0.0.0", port=settings.PORT)
     except KeyboardInterrupt:
         handle_exit()
     finally:

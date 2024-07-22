@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     DB_NAME: str = os.getenv("DB_NAME")
     # URL for the GraphQL API endpoint with specific query parameters
     API_URL: str = os.getenv("API_URL")
+    # Port for running the FastAPI application
+    PORT: int = int(os.getenv("PORT", 8000))
 
     # GraphQL query for searching posts with optional pagination and city filters
     SEARCH_QUERY: str = '''
