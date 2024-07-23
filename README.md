@@ -23,10 +23,9 @@ This Python script serves as the backend for a web scraping and data management 
 
 3. Set up environment variables:
    Create a `.env` file in the root directory and add the following:
-   `MONGODB_URI`=""
-   `DB_NAME`="haraj-db"
-   `API_URL`="https://graphql.haraj.com.sa/?queryName=search&lang=en&clientId=5PfyC2s3-xlv8-ManX-RCdf-LqhFYr5SkUh3v3&version=N9.0.38%20,%206/28/2024/"
-   `PORT`=8000
+
+-`MONGODB_URI`="" -`DB_NAME`="haraj-db"
+`API_URL`="https://graphql.haraj.com.sa/?queryName=search&lang=en&clientId=5PfyC2s3-xlv8-ManX-RCdf-LqhFYr5SkUh3v3&version=N9.0.38%20,%206/28/2024/" -`PORT`=8000
 
 ## Configuration
 
