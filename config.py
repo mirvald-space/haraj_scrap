@@ -33,6 +33,7 @@ class Settings(BaseSettings):
                 bodyHTML
                 city
                 imagesList
+                commentCount
             }
             pageInfo {
                 hasNextPage

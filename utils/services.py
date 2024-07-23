@@ -109,8 +109,13 @@ async def parse_and_store_posts(search_query: str, city: Optional[str] = None):
                 'postDate': datetime.fromtimestamp(int(item['postDate'])),
                 'title': item['title'],
                 'updateDate': datetime.fromtimestamp(int(item['updateDate'])),
-                'firstImage': item['imagesList'][0] if item['imagesList'] else None
+                'firstImage': item['imagesList'][0] if item['imagesList'] else None,
+                # Используем .get() с значением по умолчанию
+                'commentCount': item.get('commentCount', 0)
             }
+            logger.debug(f"Processing post {post_data['id']} with commentCount: {
+                         post_data['commentCount']}")
+
             # Update the post data in the database, or insert if it doesn't exist
             await update_one(collection_name, {'id': post_data['id']}, {'$set': post_data}, upsert=True)
 
