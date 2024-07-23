@@ -82,27 +82,29 @@ To use this backend script with your front-end, you'll need to set up API endpoi
 
 [
 {
-"id": "140507182",
-"bodyHTML": "text",
-"title": "text,
-"URL": "https://haraj.com.sa/en/11140507182/أستديو_مميز_ايجار_يومي/",
-"city": "الرياض",
-"postDate": "2024-07-23T10:22:23",
-"updateDate": "2024-07-23T10:22:23",
-"firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_CE6D1043-6A81-44F8-B36B-818BF2E1922C.jpg",
-"commentCount": 0
-},
-{
-"id": "140505521",
-"bodyHTML": "text",
-"title": "text",
-"URL": "https://haraj.com.sa/en/11140505521/شاليه_للإيجار_حي_الخير_شمال_الرياض/",
-"city": "الرياض",
-"postDate": "2024-07-23T09:46:48",
-"updateDate": "2024-07-23T09:46:48",
-"firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_48AA49F8-590A-4A72-8A00-2EF519EA20B6.jpg",
-"commentCount": 0
-},] 2. **Get Specific Post:**
+
+- "id": "140507182",
+- "bodyHTML": "text",
+- "title": "text,
+- "URL": "https://haraj.com.sa/en/11140507182/أستديو_مميز_ايجار_يومي/",
+- "city": "الرياض",
+- "postDate": "2024-07-23T10:22:23",
+- "updateDate": "2024-07-23T10:22:23",
+- "firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_CE6D1043-6A81-44F8-B36B-818BF2E1922C.jpg",
+- "commentCount": 0
+  },
+  {
+
+  - "id": "140505521",
+  - "bodyHTML": "text",
+  - "title": "text",
+  - "URL": "https://haraj.com.sa/en/11140505521/شاليه_للإيجار_حي_الخير_شمال_الرياض/",
+  - "city": "الرياض",
+  - "postDate": "2024-07-23T09:46:48",
+  - "updateDate": "2024-07-23T09:46:48",
+  - "firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_48AA49F8-590A-4A72-8A00-2EF519EA20B6.jpg",
+  - "commentCount": 0
+    },] 2. **Get Specific Post:**
 
 - Endpoint: `/post/<post_id>`
 - Method: GET
