@@ -19,9 +19,6 @@ logger = logging.getLogger(__name__)
 
 async def search_posts_handler(query: str, city: Optional[str], page: int, limit: int, background_tasks: BackgroundTasks):
     try:
-        # logger.debug(f"Searching posts: query={query}, city={
-        #              city}, page={page}, limit={limit}")
-
         collection_name = f"posts_{query.replace(' ', '_').lower()}"
         if city:
             city_key = get_city_key(city)
@@ -30,32 +27,35 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
             collection_name += f"_{city_translation}"
 
         skip = (page - 1) * limit
-        posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
 
-        if len(posts) >= limit:
-            return posts
+        async def get_exact_posts():
+            while True:
+                posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
+                if len(posts) >= limit:
+                    return posts[:limit]
 
-        logger.info(
-            "Not enough posts found in database, starting parsing process...")
-        parsing_task = asyncio.create_task(parse_and_store_posts(query, city))
-        background_tasks.add_task(lambda: parsing_task)
+                if not background_tasks.tasks:
+                    logger.info(
+                        "Not enough posts found in database, starting parsing process...")
+                    parsing_task = asyncio.create_task(
+                        parse_and_store_posts(query, city))
+                    background_tasks.add_task(lambda: parsing_task)
 
-        async def check_posts():
-            # Minimum of 10 posts or the requested number if less than 10
-            min_posts = min(10, limit)
-            while len(posts) < limit:
+                # Небольшая пауза перед следующей проверкой
                 await asyncio.sleep(0.5)
-                new_posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
-                if len(new_posts) >= min_posts:
-                    return new_posts
-            return posts
 
-        # Set timeout
-        return await asyncio.wait_for(check_posts(), timeout=10.0)
+        # Устанавливаем таймаут в 30 секунд
+        return await asyncio.wait_for(get_exact_posts(), timeout=30.0)
 
     except asyncio.TimeoutError:
-        logger.warning("Timeout reached while waiting for posts")
-        return posts  # Retrieve what we can find
+        logger.warning(f"Timeout reached while waiting for {limit} posts")
+        raise HTTPException(status_code=504, detail=f"Timeout while fetching {
+                            limit} posts. Try a smaller limit or try again later.")
+    except Exception as e:
+        logger.exception(f"Error in search_posts_handler: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Internal server error: {str(e)}")
+
     except Exception as e:
         logger.exception(f"Error in search_posts_handler: {str(e)}")
         raise HTTPException(
