@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from typing import List, Optional
 
 from fastapi import BackgroundTasks, HTTPException
@@ -29,11 +30,13 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
 
         skip = (page - 1) * limit
 
-        async def get_exact_posts():
+        async def get_available_posts():
             while True:
+                total_posts = await count_posts(query, city)
                 posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
-                if len(posts) >= limit:
-                    return posts[:limit]
+
+                if posts or total_posts < limit:
+                    return posts, total_posts
 
                 if not background_tasks.tasks:
                     logger.info(
@@ -42,21 +45,17 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                         parse_and_store_posts(query, city))
                     background_tasks.add_task(lambda: parsing_task)
 
-                # Небольшая пауза перед следующей проверкой
                 await asyncio.sleep(0.5)
 
-        # Устанавливаем таймаут в 30 секунд
-        return await asyncio.wait_for(get_exact_posts(), timeout=30.0)
+        posts, total_posts = await asyncio.wait_for(get_available_posts(), timeout=30.0)
+
+        # Возвращаем список постов
+        return posts
 
     except asyncio.TimeoutError:
-        logger.warning(f"Timeout reached while waiting for {limit} posts")
-        raise HTTPException(status_code=504, detail=f"Timeout while fetching {
-                            limit} posts. Try a smaller limit or try again later.")
-    except Exception as e:
-        logger.exception(f"Error in search_posts_handler: {str(e)}")
+        logger.warning(f"Timeout reached while waiting for posts")
         raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
-
+            status_code=504, detail="Timeout while fetching posts. Try again later.")
     except Exception as e:
         logger.exception(f"Error in search_posts_handler: {str(e)}")
         raise HTTPException(
