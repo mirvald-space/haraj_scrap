@@ -11,6 +11,7 @@ from utils.services import (
     get_post_service,
     parse_and_store_posts,
     search_posts_service,
+    update_all_collections,
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -67,3 +68,15 @@ async def get_post_handler(post_id: str):
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
+
+# handler for updating the database
+
+
+async def update_database_handler():
+    try:
+        await update_all_collections()
+        return {"message": "Database update completed successfully"}
+    except Exception as e:
+        logger.exception(f"Error in update_database_handler: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error updating database: {str(e)}")

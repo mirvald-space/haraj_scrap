@@ -4,7 +4,11 @@ from fastapi import APIRouter, BackgroundTasks, Query
 
 from db.models import Post, PostDetail
 from utils.decorators import handle_exceptions
-from utils.handlers import get_post_handler, search_posts_handler
+from utils.handlers import (
+    get_post_handler,
+    search_posts_handler,
+    update_database_handler,
+)
 
 # Create an API router instance
 router = APIRouter()
@@ -38,3 +42,12 @@ async def search_posts(
 @handle_exceptions
 async def get_post(post_id: str):
     return await get_post_handler(post_id)
+
+# New route for updating the database
+
+
+@router.post("/update")
+@handle_exceptions
+async def update_database(background_tasks: BackgroundTasks):
+    background_tasks.add_task(update_database_handler)
+    return {"message": "Database update initiated"}
