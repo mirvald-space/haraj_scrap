@@ -56,10 +56,6 @@ To modify these settings, you can either update the `.env` file or modify the `c
 To start the server:
 python main.py
 
-### Development
-
-- Right now the backend is running at this address `https://goldfish-app-zc66g.ondigitalocean.app`
-
 ### How It Works:
 
 1. The script fetches data from an API based on search queries and city filters.
