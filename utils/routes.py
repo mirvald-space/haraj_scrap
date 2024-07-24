@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
-from db.models import Post, PostDetail
+from db.models import Post, PostDetail, SearchResponse
 from utils.decorators import handle_exceptions
 from utils.handlers import (
     get_post_handler,
@@ -24,7 +24,7 @@ async def root():
 # Route for searching posts
 
 
-@router.get("/search/", response_model=List[Post])
+@router.get("/search/", response_model=SearchResponse)
 @handle_exceptions
 async def search_posts(
     background_tasks: BackgroundTasks,
@@ -33,7 +33,15 @@ async def search_posts(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
-    return await search_posts_handler(query, city, page, limit, background_tasks)
+    result = await search_posts_handler(query, city, page, limit, background_tasks)
+
+    if result is None:
+        raise HTTPException(
+            status_code=202,
+            detail="Data is being parsed. Please try again later."
+        )
+
+    return SearchResponse(**result)
 
 # Route for fetching a specific post by ID
 

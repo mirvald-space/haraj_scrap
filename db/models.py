@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
-
 # Base model for a post
+
+
 class Post(BaseModel):
     id: Union[str, int]  # ID can be either string or integer
     bodyHTML: str  # HTML content of the post
@@ -20,3 +21,9 @@ class Post(BaseModel):
 
 class PostDetail(Post):
     bodyHTML: str  # HTML content of the post
+
+
+class SearchResponse(BaseModel):
+    posts: List[Post]
+    is_complete: bool
+    total_count: int

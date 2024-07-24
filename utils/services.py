@@ -93,7 +93,10 @@ async def fetch_data_from_source(search_query: str, city: Optional[str] = None):
 
 async def parse_and_store_posts(search_query: str, city: Optional[str] = None):
     try:
+        logger.info(f"Starting parsing for query: {
+                    search_query}, city: {city}")
         items = await fetch_data_from_source(search_query, city)
+        logger.info(f"Fetched {len(items)} items from source")
         collection_name = f"posts_{search_query.replace(' ', '_').lower()}"
         if city:
             city_key = get_city_key(city)
@@ -110,18 +113,14 @@ async def parse_and_store_posts(search_query: str, city: Optional[str] = None):
                 'title': item['title'],
                 'updateDate': datetime.fromtimestamp(int(item['updateDate'])),
                 'firstImage': item['imagesList'][0] if item['imagesList'] else None,
-                # Используем .get() с значением по умолчанию
                 'commentCount': item.get('commentCount', 0)
             }
-            logger.debug(f"Processing post {post_data['id']} with commentCount: {
-                         post_data['commentCount']}")
-
-            # Update the post data in the database, or insert if it doesn't exist
+            logger.debug(f"Storing post {post_data['id']}")
             await update_one(collection_name, {'id': post_data['id']}, {'$set': post_data}, upsert=True)
 
-        # Update the last update timestamp in the database
         await update_one(collection_name, {'_id': 'last_update'}, {'$set': {'timestamp': datetime.utcnow()}}, upsert=True)
-        logger.info(f"Database updated successfully: {len(items)} items")
+        logger.info(f"Database updated successfully: {
+                    len(items)} items stored in {collection_name}")
     except Exception as e:
         logger.exception(f"Error updating database: {str(e)}")
         raise
@@ -161,23 +160,26 @@ async def search_posts_service(query: str, city: Optional[str], page: int, limit
 
         logger.debug(f"Collection name: {collection_name}")
 
+        # Проверяем существование коллекции
+        collections = await list_collection_names()
+        if collection_name not in collections or await count_posts(collection_name) == 0:
+            logger.info(f"Collection {
+                        collection_name} does not exist or is empty. Starting parsing process...")
+            background_tasks.add_task(parse_and_store_posts, query, city)
+            # Ждем некоторое время, чтобы парсинг успел начать работу
+            await asyncio.sleep(5)
+
         skip = (page - 1) * limit
         posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
 
-        if len(posts) >= limit:
-            return posts
+        total_count = await count_posts(collection_name)
 
-        logger.info(
-            "Not enough posts found in database, starting parsing process...")
-        background_tasks.add_task(parse_and_store_posts, query, city)
+        return {
+            "posts": posts,
+            "is_complete": len(posts) >= limit,
+            "total_count": total_count
+        }
 
-        while len(posts) < limit:
-            await asyncio.sleep(1)
-            posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
-            if len(posts) >= limit:
-                return posts
-
-        return posts
     except Exception as e:
         logger.exception(f"Error in search_posts_service: {str(e)}")
         raise
