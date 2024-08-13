@@ -38,7 +38,7 @@ async def search_posts(
     if result is None:
         raise HTTPException(
             status_code=202,
-            detail="Data is being parsed. Please try again later."
+            detail="Data is being processed. Please try again later."
         )
 
     return SearchResponse(**result)

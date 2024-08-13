@@ -73,13 +73,9 @@ async def list_collection_names():
 # Count the number of posts matching the query and optional city
 
 
-async def count_posts(query: str, city: Optional[str]):
-    collection = await get_collection('posts')
-    filter = {'query': query}
-    if city:
-        filter['city'] = city
-    # Count the number of documents that match the filter
-    return await collection.count_documents(filter)
+async def count_posts(collection_name: str):
+    collection = await get_collection(collection_name)
+    return await collection.count_documents({'_id': {'$ne': 'last_update'}})
 
 # Get the latest posts sorted by post date
 

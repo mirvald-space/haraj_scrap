@@ -34,36 +34,29 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
             return await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
 
         posts = await get_posts()
+        total_count = await count_posts(collection_name)
 
         # Check if data is still being processed
-        while not posts:
+        if not posts and total_count == 0:
             logger.debug("No posts found, waiting for data to be processed...")
-            await asyncio.sleep(1)
-            posts = await get_posts()
+            background_tasks.add_task(parse_and_store_posts, query, city)
+            return None  # Indicate that data is being processed
 
-        if not posts:
-            if page > 1:
-                return {
-                    "posts": [],
-                    "is_complete": True,
-                    "total_count": 0,
-                    "has_next_page": False,
-                    "message": "No more posts found"
-                }
-            else:
-                return {
-                    "posts": [],
-                    "is_complete": True,
-                    "total_count": 0,
-                    "has_next_page": False,
-                    "message": "No posts found"
-                }
+        # Check if the requested page is beyond available data
+        if skip >= total_count:
+            return {
+                "posts": [],
+                "is_complete": True,
+                "total_count": total_count,
+                "has_next_page": False,
+                "message": "No more posts available"
+            }
 
         return {
             "posts": posts,
-            "is_complete": len(posts) >= limit,
-            "total_count": len(posts),
-            "has_next_page": len(posts) == limit
+            "is_complete": len(posts) < limit,
+            "total_count": total_count,
+            "has_next_page": skip + len(posts) < total_count
         }
 
     except Exception as e:
