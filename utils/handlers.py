@@ -39,6 +39,25 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
         posts = await get_posts()
         total_posts = await get_total_posts()
 
+        # Проверяем, что есть достаточно постов для запрошенной страницы
+        if len(posts) == 0:
+            if page > 1:
+                return {
+                    "posts": [],
+                    "is_complete": True,
+                    "total_count": total_posts,
+                    "has_next_page": False,
+                    "message": "No more posts found"
+                }
+            else:
+                return {
+                    "posts": [],
+                    "is_complete": True,
+                    "total_count": total_posts,
+                    "has_next_page": False,
+                    "message": "No posts found"
+                }
+
         if len(posts) < limit:
             logger.info(
                 "Not enough posts found in database, starting parsing process...")
@@ -72,15 +91,11 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                 if posts or total_posts > 0:
                     break
 
-            # Start an additional task to continue parsing in the background,
-            # if we haven't reached the limit yet
-            if len(posts) < limit:
-                background_tasks.add_task(continue_parsing, query, city, limit)
-
         return {
             "posts": posts,
             "is_complete": len(posts) >= limit,
-            "total_count": total_posts
+            "total_count": total_posts,
+            "has_next_page": total_posts > page * limit
         }
 
     except Exception as e:
