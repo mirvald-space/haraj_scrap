@@ -27,3 +27,8 @@ class SearchResponse(BaseModel):
     posts: List[Post]
     is_complete: bool
     total_count: int
+    current_page: int
+    total_pages: int
+    has_previous_page: bool
+    has_next_page: bool
+    message: str

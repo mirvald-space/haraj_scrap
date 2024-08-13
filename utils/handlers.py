@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import traceback
 from typing import List, Optional
 
@@ -28,35 +29,38 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                 city_key, city_key)
             collection_name += f"_{city_translation}"
 
-        skip = (page - 1) * limit
-
-        async def get_posts():
-            return await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
-
-        posts = await get_posts()
         total_count = await count_posts(collection_name)
+        total_pages = math.ceil(total_count / limit)
 
-        # Check if data is still being processed
+        if page > total_pages:
+            return {
+                "posts": [],
+                "is_complete": True,
+                "total_count": total_count,
+                "current_page": page,
+                "total_pages": total_pages,
+                "has_previous_page": page > 1,
+                "has_next_page": False,
+                "message": f"Requested page {page} Is outside the range of available data. Last available page: {total_pages}."
+            }
+
+        skip = (page - 1) * limit
+        posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
+
         if not posts and total_count == 0:
             logger.debug("No posts found, waiting for data to be processed...")
             background_tasks.add_task(parse_and_store_posts, query, city)
             return None  # Indicate that data is being processed
 
-        # Check if the requested page is beyond available data
-        if skip >= total_count:
-            return {
-                "posts": [],
-                "is_complete": True,
-                "total_count": total_count,
-                "has_next_page": False,
-                "message": "No more posts available"
-            }
-
         return {
             "posts": posts,
             "is_complete": len(posts) < limit,
             "total_count": total_count,
-            "has_next_page": skip + len(posts) < total_count
+            "current_page": page,
+            "total_pages": total_pages,
+            "has_previous_page": page > 1,
+            "has_next_page": page < total_pages,
+            "message": "Данные успешно получены." if posts else "Нет доступных постов для этой страницы."
         }
 
     except Exception as e:
