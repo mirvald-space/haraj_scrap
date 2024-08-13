@@ -33,19 +33,20 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
         async def get_posts():
             return await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
 
-        async def get_total_posts():
-            return await count_posts(query, city)
-
         posts = await get_posts()
-        total_posts = await get_total_posts()
 
-        # Проверяем, что есть достаточно постов для запрошенной страницы
-        if len(posts) == 0:
+        # Check if data is still being processed
+        while not posts:
+            logger.debug("No posts found, waiting for data to be processed...")
+            await asyncio.sleep(1)
+            posts = await get_posts()
+
+        if not posts:
             if page > 1:
                 return {
                     "posts": [],
                     "is_complete": True,
-                    "total_count": total_posts,
+                    "total_count": 0,
                     "has_next_page": False,
                     "message": "No more posts found"
                 }
@@ -53,49 +54,16 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                 return {
                     "posts": [],
                     "is_complete": True,
-                    "total_count": total_posts,
+                    "total_count": 0,
                     "has_next_page": False,
                     "message": "No posts found"
                 }
 
-        if len(posts) < limit:
-            logger.info(
-                "Not enough posts found in database, starting parsing process...")
-            parsing_task = asyncio.create_task(
-                parse_and_store_posts(query, city))
-
-            while len(posts) < limit:
-                # Wait 1 second for the next check
-                await asyncio.sleep(1)
-                new_posts = await get_posts()
-                new_total = await get_total_posts()
-
-                if len(new_posts) > len(posts):
-                    posts = new_posts
-                    total_posts = new_total
-                    if len(posts) >= limit:
-                        break
-
-                if new_total > total_posts:
-                    total_posts = new_total
-                elif new_total == total_posts and new_total > 0:
-                    # If the total number of posts hasn't changed and it's greater than 0,
-                    # then we have collected all available posts
-                    break
-
-            # If there are still no posts after parsing, wait for at least one to appear
-            while not posts:
-                await asyncio.sleep(1)
-                posts = await get_posts()
-                total_posts = await get_total_posts()
-                if posts or total_posts > 0:
-                    break
-
         return {
             "posts": posts,
             "is_complete": len(posts) >= limit,
-            "total_count": total_posts,
-            "has_next_page": total_posts > page * limit
+            "total_count": len(posts),
+            "has_next_page": len(posts) == limit
         }
 
     except Exception as e:
