@@ -36,6 +36,9 @@ class Settings(BaseSettings):
                 commentCount
                 tags
                 authorUsername
+                price {
+                    formattedPrice
+                }
             }
             pageInfo {
                 hasNextPage

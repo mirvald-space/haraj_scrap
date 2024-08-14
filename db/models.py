@@ -1,9 +1,14 @@
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Base model for a post
+
+
+class Price(BaseModel):
+    formattedPrice: Optional[str] = Field(
+        None, description="Formatted price of the item")
 
 
 class Post(BaseModel):
@@ -18,6 +23,7 @@ class Post(BaseModel):
     commentCount: int  # Number of comments on the post
     tags: Optional[List[str]] = None
     authorUsername: Optional[str] = None
+    price: Optional[Price] = None
 # Detailed model for a post extending the base Post model
 
 
