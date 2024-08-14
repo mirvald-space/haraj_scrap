@@ -113,7 +113,9 @@ async def parse_and_store_posts(search_query: str, city: Optional[str] = None):
                 'title': item['title'],
                 'updateDate': datetime.fromtimestamp(int(item['updateDate'])),
                 'firstImage': item['imagesList'][0] if item['imagesList'] else None,
-                'commentCount': item.get('commentCount', 0)
+                'commentCount': item.get('commentCount', 0),
+                'tags': item.get('tags', []),
+                'authorUsername': item.get('authorUsername')
             }
             logger.debug(f"Storing post {post_data['id']}")
             await update_one(collection_name, {'id': post_data['id']}, {'$set': post_data}, upsert=True)

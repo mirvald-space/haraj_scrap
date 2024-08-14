@@ -34,6 +34,8 @@ class Settings(BaseSettings):
                 city
                 imagesList
                 commentCount
+                tags
+                authorUsername
             }
             pageInfo {
                 hasNextPage

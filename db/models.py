@@ -16,6 +16,8 @@ class Post(BaseModel):
     updateDate: datetime  # Date when the post was last updated
     firstImage: Optional[str] = None  # Optional field for the first image URL
     commentCount: int  # Number of comments on the post
+    tags: Optional[List[str]] = None
+    authorUsername: Optional[str] = None
 # Detailed model for a post extending the base Post model
 
 
