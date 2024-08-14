@@ -1,38 +1,35 @@
 import logging
+import signal
+import sys
 from contextlib import asynccontextmanager
 
+import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 
-from config import settings  # Import settings from config
-from db.database import close_db, init_db
+from config import settings
+from db.database import Database
 from utils.routes import router
-from utils.services import update_all_collections
+from utils.services import PostService
 
-# Logging Setup
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Initialize the scheduler for periodic tasks
 scheduler = AsyncIOScheduler()
-
-# Context manager for application lifespan
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info("Initializing database connection...")
-    await init_db()  # Establish database connection
+    await Database.connect()
     logger.info("Database connection initialized.")
 
     logger.info("Starting scheduler...")
-    scheduler.start()  # Start the scheduler
-    # Add a job to update all collections every hour
+    scheduler.start()
     scheduler.add_job(
-        update_all_collections,
+        PostService.update_all_collections,
         IntervalTrigger(hours=1),
         id='periodic_update',
         replace_existing=True
@@ -42,51 +39,34 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        # Shutdown
         logger.info("Shutting down scheduler...")
-        scheduler.shutdown()  # Shutdown the scheduler
+        scheduler.shutdown()
         logger.info("Scheduler shut down.")
 
         logger.info("Closing database connection...")
-        await close_db()  # Close database connection
+        await Database.close()
         logger.info("Database connection closed.")
 
-# Create FastAPI app with the custom lifespan context manager
 app = FastAPI(lifespan=lifespan)
-# Include the application routes from the router
 app.include_router(router)
 
-# Data update function with logging
 
+def signal_handler(sig, frame):
+    logger.info("Received shutdown signal. Initiating graceful shutdown...")
+    scheduler.shutdown(wait=False)
+    sys.exit(0)
 
-async def update_all_collections():
-    logger.info("Starting the data collection process...")
-    try:
-        # Logic for data update
-        logger.info("Data collection process completed successfully.")
-    except Exception as e:
-        logger.error(f"An error occurred during data collection: {e}")
 
 if __name__ == "__main__":
-    import signal
-    import sys
-
-    import uvicorn
-
-    # Graceful shutdown handler
-    def handle_exit(*args):
-        logger.info("Shutting down gracefully...")
-        sys.exit(0)
-
-    # Register signal handlers for graceful shutdown
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        signal.signal(sig, handle_exit)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     try:
-        logger.info("Starting the script...")
-        # Run the application using the configured port
+        logger.info("Starting the Haraj Scraper Backend...")
         uvicorn.run(app, host="0.0.0.0", port=settings.PORT)
     except KeyboardInterrupt:
-        handle_exit()
+        logger.info("Keyboard interrupt received. Shutting down...")
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
     finally:
-        logger.info("Script has been stopped.")
+        logger.info("Application shutdown complete.")
