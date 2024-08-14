@@ -7,7 +7,7 @@ from typing import List, Optional
 from fastapi import BackgroundTasks, HTTPException
 
 from config import settings
-from db.database import count_posts, find, get_latest_posts
+from db.database import count_posts, find, get_latest_posts, list_collection_names
 from utils.services import (
     get_city_key,
     get_post_service,
@@ -29,7 +29,24 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                 city_key, city_key)
             collection_name += f"_{city_translation}"
 
-        total_count = await count_posts(collection_name)
+        collections = await list_collection_names()
+        total_count = await count_posts(collection_name) if collection_name in collections else 0
+
+        if collection_name not in collections or total_count == 0:
+            logger.info(f"Collection {
+                        collection_name} does not exist or is empty. Starting parsing process...")
+            background_tasks.add_task(parse_and_store_posts, query, city)
+            return {
+                "posts": [],
+                "is_complete": True,
+                "total_count": 0,
+                "current_page": 1,
+                "total_pages": 0,
+                "has_previous_page": False,
+                "has_next_page": False,
+                "message": "Data is being processed. Please try again later."
+            }
+
         total_pages = math.ceil(total_count / limit)
 
         if page > total_pages:
@@ -41,16 +58,11 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
                 "total_pages": total_pages,
                 "has_previous_page": page > 1,
                 "has_next_page": False,
-                "message": f"Requested page {page} Is outside the range of available data. Last available page: {total_pages}."
+                "message": f"Requested page {page} is outside the range of available data. Last available page: {total_pages}."
             }
 
         skip = (page - 1) * limit
         posts = await find(collection_name, {'_id': {'$ne': 'last_update'}}, [("postDate", -1)], skip, limit)
-
-        if not posts and total_count == 0:
-            logger.debug("No posts found, waiting for data to be processed...")
-            background_tasks.add_task(parse_and_store_posts, query, city)
-            return None  # Indicate that data is being processed
 
         return {
             "posts": posts,
@@ -60,7 +72,7 @@ async def search_posts_handler(query: str, city: Optional[str], page: int, limit
             "total_pages": total_pages,
             "has_previous_page": page > 1,
             "has_next_page": page < total_pages,
-            "message": "Данные успешно получены." if posts else "Нет доступных постов для этой страницы."
+            "message": "Data successfully retrieved." if posts else "No posts available for this page."
         }
 
     except Exception as e:
