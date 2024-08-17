@@ -1,151 +1,105 @@
-# (http://haraj.com.sa) Scraper Backend
+# Haraj.com.sa Scraper Backend
 
-## Backend Script Overview
+This project is a backend service for scraping and managing data from Haraj.com.sa. It provides an API for searching posts, retrieving specific posts, and updating the database with new data.
 
-This Python script serves as the backend for a web scraping and data management system. It's designed to fetch, parse, and store data from an external API, specifically for searching and retrieving posts. Here's how it works and how to integrate it with your front-end:
+## Features
 
-### Key Features:
+- Asynchronous data fetching from Haraj.com.sa API
+- MongoDB integration for data storage
+- FastAPI-based RESTful API
+- Scheduled background tasks for data updates
+- City-based filtering and pagination support
 
-1. Asynchronous data fetching from an external API
-2. Pagination handling for large datasets
-3. Data parsing and storage in a database(Mongo DB)
-4. Search functionality with city filtering
-5. Background task processing for real-time updates
+## Prerequisites
 
-## Setup
+- Python 3.7+
+- MongoDB
+- pip (Python package manager)
+
+## Installation
 
 1. Clone the repository:
+
+   ```
    git clone https://github.com/yourusername/haraj-scraper.git
    cd haraj-scraper
+   ```
 
-2. Install dependencies:
+2. Create a virtual environment:
+
+   ```
+   python -m venv .myenv
+   source .myenv/bin/activate  # On Windows use `.myenv\Scripts\activate`
+   ```
+
+3. Install dependencies:
+
+   ```
    pip install -r requirements.txt
+   ```
 
-3. Set up environment variables:
-   Create a `.env` file in the root directory and add the following:
+4. Set up environment variables:
+   Create a `.env` file in the root directory with the following content:
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   DB_NAME=haraj-db
+   API_URL=https://graphql.haraj.com.sa/?queryName=search&lang=en&clientId=5PfyC2s3-xlv8-ManX-RCdf-LqhFYr5SkUh3v3&version=N9.0.38%20,%206/28/2024/
+   PORT=8000
+   ```
 
--`MONGODB_URI`="" -`DB_NAME`="haraj-db"
-`API_URL`="https://graphql.haraj.com.sa/?queryName=search&lang=en&clientId=5PfyC2s3-xlv8-ManX-RCdf-LqhFYr5SkUh3v3&version=N9.0.38%20,%206/28/2024/" -`PORT`=8000
+## Running Locally
 
-## Configuration
+To run the server locally:
 
-The project uses a `config.py` file to manage settings. This file loads environment variables and defines configuration parameters. Here's an overview of the key settings:
-
-### Environment Variables (defined in .env file):
-
-- `MONGODB_URI`: MongoDB connection string
-- `DB_NAME`: Name of the MongoDB database
-- `API_URL`: URL for the Haraj GraphQL API
-- `PORT`: Port number for the FastAPI application (default: 8000)
-
-### Other Important Settings:
-
-- `SEARCH_QUERY`: GraphQL query for searching posts
-- `CITY_TRANSLATIONS`: Dictionary for converting Arabic city names to their Latin script equivalents
-- `REQUEST_TIMEOUT`: Maximum duration for a request (10 seconds)
-- `MAX_RETRIES`: Maximum number of retry attempts for failed requests (3)
-- `RETRY_DELAY`: Delay between retry attempts (5 seconds)
-- `MAX_CONCURRENT_REQUESTS`: Maximum number of concurrent requests allowed (20)
-
-To modify these settings, you can either update the `.env` file or modify the `config.py` file directly.
-
-## Usage
-
-### Running the script
-
-To start the server:
-python main.py
-
-### Development
-
-- Right now the backend is running at this address `https://goldfish-app-zc66g.ondigitalocean.app`
-
-### How It Works:
-
-1. The script fetches data from an API based on search queries and city filters.
-2. It stores the fetched data in a database, organizing it into collections.
-3. When the front-end requests data, the script searches the local database first.
-4. If insufficient data is found, it triggers a background task to fetch more data from the API.
-
-### Integration with Front-end:
-
-To use this backend script with your front-end, you'll need to set up API endpoints that your front-end can call. Here are the main functionalities you should expose:
-
-1. **Search Posts:**
-
-   - Endpoint: `/search`
-   - Method: GET
-   - Parameters:
-     - `query`: Search term
-     - `city`: (Optional) City filter
-     - `page`: Page number
-     - `limit`: Number of results per page
-   - This will call the `search_posts_service` function
-
-### Response
-
-[
-{
-
-- "id": "140507182",
-- "bodyHTML": "text",
-- "title": "text,
-- "URL": "https://haraj.com.sa/en/11140507182/أستديو_مميز_ايجار_يومي/",
-- "city": "الرياض",
-- "postDate": "2024-07-23T10:22:23",
-- "updateDate": "2024-07-23T10:22:23",
-- "firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_CE6D1043-6A81-44F8-B36B-818BF2E1922C.jpg",
-- "commentCount": 0
-  },
-  {
-
-  - "id": "140505521",
-  - "bodyHTML": "text",
-  - "title": "text",
-  - "URL": "https://haraj.com.sa/en/11140505521/شاليه_للإيجار_حي_الخير_شمال_الرياض/",
-  - "city": "الرياض",
-  - "postDate": "2024-07-23T09:46:48",
-  - "updateDate": "2024-07-23T09:46:48",
-  - "firstImage": "https://mimg6cdn.haraj.com.sa/userfiles30/2024-07-23/1350x1800_48AA49F8-590A-4A72-8A00-2EF519EA20B6.jpg",
-  - "commentCount": 0
-    },] 2. **Get Specific Post:**
-
-- Endpoint: `/post/<post_id>`
-- Method: GET
-- This will call the `get_post_service` function
-
-3. **Update Database:**
-   - Endpoint: `/update`
-   - Method: POST
-   - This can trigger the `update_all_collections` function to refresh the database
-
-### Front-end Implementation:
-
-1. Use AJAX or Fetch API to make requests to these endpoints.
-2. Handle pagination in your UI, making new requests as the user scrolls or clicks through pages.
-3. Implement a search form that sends queries to the search endpoint.
-4. Create a detailed view page that fetches specific post data using the post ID.
-
-### Example Front-end Code (JavaScript):
-
-```javascript
-// Search for posts
-async function searchPosts(query, city, page = 1, limit = 20) {
-	const response = await fetch(
-		`/api/search?query=${query}&city=${city}&page=${page}&limit=${limit}`
-	)
-	return await response.json()
-}
-
-// Get a specific post
-async function getPost(postId) {
-	const response = await fetch(`/api/post/${postId}`)
-	return await response.json()
-}
-
-// Update the database (admin function)
-async function updateDatabase() {
-	const response = await fetch('/api/update', { method: 'POST' })
-	return await response.json()
-}
 ```
+python main.py
+```
+
+The server will start on `http://localhost:8000`.
+
+## API Endpoints
+
+- `GET /`: Root endpoint to check if the server is running
+- `GET /search/`: Search for posts with optional city filtering and pagination
+- `GET /post/{post_id}`: Retrieve a specific post by ID
+- `POST /update`: Trigger a manual database update (background task)
+
+## Deployment
+
+To deploy on a server:
+
+1. Set up a MongoDB instance (e.g., MongoDB Atlas)
+2. Clone the repository on your server
+3. Install dependencies: `pip install -r requirements.txt`
+4. Set up environment variables (see Installation step 4)
+5. Run the application using a process manager like PM2 or supervisord:
+   ```
+   pm2 start main.py --interpreter python3
+   ```
+
+## Development
+
+- The project structure is as follows:
+  ```
+  scrapper/
+  ├── main.py
+  ├── config.py
+  ├── db/
+  │   ├── database.py
+  │   └── models.py
+  └── utils/
+      ├── routes.py
+      ├── handlers.py
+      └── services.py
+  ```
+- To add new features, extend the `PostService` class in `utils/services.py`
+- Add new routes in `utils/routes.py`
+- Modify database operations in `db/database.py`
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
